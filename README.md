@@ -1,6 +1,6 @@
 # nix-opengl-driver
 
-A standalone CLI tool for managing the Nix OpenGL/Vulkan driver symlink farm on Linux.
+Tool for managing the standalone Nix OpenGL/Vulkan driver symlink farm
 
 > ⚠️ **WARNING:** This project is _still under development_.  
 > **Do not use in production!**
@@ -43,9 +43,9 @@ Commands:
   tmpfiles            Print the tmpfiles.d rule for `/run/opengl-driver`
   tmpfiles-install    Install & apply the tmpfiles.d rule (creates `/run/opengl-driver`)
   tmpfiles-uninstall  Remove the tmpfiles.d rule
-  service             Print the systemd oneshot-sync service unit to stdout
-  service-install     Install & enable the systemd oneshot-sync service
-  service-uninstall   Disable & remove the systemd oneshot-sync service
+  service             Print the systemd oneshot service unit to stdout
+  service-install     Install & enable the systemd oneshot service
+  service-uninstall   Disable & remove the systemd oneshot service
   install             Install both the tmpfiles rule (and apply it) and the on-boot sync service
   uninstall           Uninstall all state, GC-root, tmpfiles rule, and service
   state               Dump the raw JSON state file (or its backup)

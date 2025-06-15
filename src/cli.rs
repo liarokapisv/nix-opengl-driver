@@ -55,13 +55,13 @@ pub enum Commands {
     /// Remove the tmpfiles.d rule.
     TmpfilesUninstall,
 
-    /// Print the systemd oneshot-sync service unit to stdout
+    /// Print the systemd oneshot service unit to stdout
     Service,
 
-    /// Install & enable the systemd oneshot-sync service
+    /// Install & enable the systemd oneshot service
     ServiceInstall,
 
-    /// Disable & remove the systemd oneshot-sync service
+    /// Disable & remove the systemd oneshot service
     ServiceUninstall,
 
     /// Install both the tmpfiles rule (and apply it) and the on-boot sync service

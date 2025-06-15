@@ -2,6 +2,7 @@
 name = "nix-opengl-driver"
 version = "0.1.0"
 edition = "2021"
+description = "Tool for managing the standalone Nix OpenGL/Vulkan driver symlink farm"
 
 [dependencies]
 anyhow          = "1.0"
