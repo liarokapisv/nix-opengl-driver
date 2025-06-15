@@ -10,6 +10,7 @@ const SERVICE_PATH: &str = "/etc/systemd/system/nix-opengl-driver.service";
 
 fn tool_path() -> Result<String> {
     let flake_ref = format!("{FLAKE_ROOT}#nix-opengl-driver");
+    println!("flake_ref: {FLAKE_ROOT}");
     let out = Command::new("nix")
         .args(&["build", "--print-out-paths", "--no-link", &flake_ref])
         .output()
