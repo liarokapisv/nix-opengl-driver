@@ -6,8 +6,8 @@ After=nix-daemon.socket
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/nix-opengl-driver sync
-ExecStart=/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/nix-opengl-driver.conf
+ExecStart={{{tool_path}}} sync
+ExecStart=systemd-tmpfiles --create /etc/tmpfiles.d/nix-opengl-driver.conf
 
 [Install]
 WantedBy=multi-user.target

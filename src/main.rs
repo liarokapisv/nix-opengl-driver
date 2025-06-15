@@ -111,18 +111,16 @@ fn main() -> Result<()> {
             tmpfiles::uninstall_rule().context("uninstalling tmpfiles rule")?;
             println!("Uninstalled tmpfiles rule");
         }
-        cli::Commands::Service => {
-            service::print_service();
-        }
+        cli::Commands::Service => service::print_service().context("printing systemd service")?,
         cli::Commands::ServiceInstall => {
-            service::install_service().context("installing systemd sync service")?;
+            service::install_service().context("installing systemd service")?;
         }
         cli::Commands::ServiceUninstall => {
-            service::uninstall_service().context("uninstalling systemd sync service")?;
+            service::uninstall_service().context("uninstalling systemd service")?;
         }
         cli::Commands::Install => {
             tmpfiles::install_rule().context("installing tmpfiles rule")?;
-            service::install_service().context("installing systemd sync service")?;
+            service::install_service().context("installing systemd service")?;
             println!("Installed tmpfiles.d rule, service file and populated /run/opengl-driver");
         }
         cli::Commands::Uninstall => {
@@ -142,7 +140,7 @@ fn main() -> Result<()> {
                     },
                 }
             }
-            service::uninstall_service().context("uninstalling systemd sync service")?;
+            service::uninstall_service().context("uninstalling systemd service")?;
             tmpfiles::uninstall_rule().context("uninstalling tmpfiles rule")?;
             println!("Uninstalled gc-root, state, tmpfiles rule and service");
         }
