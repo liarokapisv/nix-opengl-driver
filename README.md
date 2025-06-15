@@ -2,6 +2,9 @@
 
 A standalone CLI tool for managing the Nix OpenGL/Vulkan driver symlink farm on Linux.
 
+> ⚠️ **WARNING:** This project is _still under development_.  
+> **Do not use in production!**
+
 ## Overview
 
 Nixpkgs packages that use OpenGL assume that an OpenGL symlink farm is available at `/run/opengl-driver`. This is baked into the runpath of some core OpenGL packages (for example `libGLX.so.0`'s runpath entry contains `/run/opengl-driver`). The contents of the symlink farm can be derived by going through the NixOS `hardware.graphics` module.
