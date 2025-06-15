@@ -24,3 +24,36 @@ it requires having first installed [system-manager](https://github.com/numtide/s
 
 It integrates with systemd to auto-detect at boot the exact version of the NVIDIA drivers used.
 The goal is to also integrate with other init-systems and transparently manage the `/run/opengl-driver` symlink farm for standalone Nix installations.
+
+## Usage
+
+
+```bash
+Usage: nix-opengl-driver [OPTIONS] <COMMAND>
+
+Commands:
+  status              Show detected vs active driver and last sync info
+  driver              Show only the detected (auto- or forced) driver
+  code                Print the Nix expression for the symlink farm
+  build               Build the symlink farm (prints store path; does not switch)
+  sync                Build and switch the active symlink to the newly built farm
+  tmpfiles            Print the tmpfiles.d rule for `/run/opengl-driver`
+  tmpfiles-install    Install & apply the tmpfiles.d rule (creates `/run/opengl-driver`)
+  tmpfiles-uninstall  Remove the tmpfiles.d rule
+  service             Print the systemd oneshot-sync service unit to stdout
+  service-install     Install & enable the systemd oneshot-sync service
+  service-uninstall   Disable & remove the systemd oneshot-sync service
+  install             Install both the tmpfiles rule (and apply it) and the on-boot sync service
+  uninstall           Uninstall all state, GC-root, tmpfiles rule, and service
+  state               Dump the raw JSON state file (or its backup)
+  hash-store          Dump the persisted NVIDIA version→hash map
+  help                Print this message or the help of the given subcommand(s)
+
+Options:
+      --quiet                   Only print the final result (store path) to stdout
+      --force-mesa              Force using the Mesa software stack
+      --force-nvidia <VERSION>  Force using NVIDIA with exactly this version
+      --resolve-hashes          Actually resolve real NVIDIA hashes instead of placeholders
+  -h, --help                    Print help
+  -V, --version                 Print version
+```
