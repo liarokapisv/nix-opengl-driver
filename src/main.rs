@@ -113,14 +113,14 @@ fn main() -> Result<()> {
         }
         cli::Commands::Service => service::print_service().context("printing systemd service")?,
         cli::Commands::ServiceInstall => {
-            service::install_service().context("installing systemd service")?;
+            service::install_service(cli.quiet).context("installing systemd service")?;
         }
         cli::Commands::ServiceUninstall => {
             service::uninstall_service().context("uninstalling systemd service")?;
         }
         cli::Commands::Install => {
             tmpfiles::install_rule().context("installing tmpfiles rule")?;
-            service::install_service().context("installing systemd service")?;
+            service::install_service(cli.quiet).context("installing systemd service")?;
             println!("Installed tmpfiles.d rule, service file and populated /run/opengl-driver");
         }
         cli::Commands::Uninstall => {

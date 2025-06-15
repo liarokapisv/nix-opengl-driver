@@ -1,33 +1,56 @@
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::{fs, path::Path, process::Command};
+use std::{env, fs, path::Path, process::Command};
 
 const GCROOT_TOOL: &str = "/nix/var/nix/gcroots/nix-opengl-driver/tool";
-const FLAKE_ROOT: &str = env!("CARGO_MANIFEST_DIR");
 const SERVICE_NAME: &str = "nix-opengl-driver.service";
 const SERVICE_PATH: &str = "/etc/systemd/system/nix-opengl-driver.service";
 
 fn tool_path() -> Result<String> {
-    let flake_ref = format!("{FLAKE_ROOT}#nix-opengl-driver");
-    println!("flake_ref: {FLAKE_ROOT}");
-    let out = Command::new("nix")
-        .args(&["build", "--print-out-paths", "--no-link", &flake_ref])
-        .output()
-        .context("running `nix build` for tool")?;
-    if !out.status.success() {
-        anyhow::bail!("`nix build {}` failed", flake_ref);
+    let exe = env::current_exe().context("getting current exe path")?;
+    let exe = exe.canonicalize().context("canonicalizing exe path")?;
+    Ok(exe.to_str().expect("Path is not valid utf8").to_string())
+}
+
+fn pin_if_nix_executable(tool_path: &str, quiet: bool) -> Result<()> {
+    if tool_path.starts_with("/nix/store/") {
+        let gcroot_dir = Path::new(GCROOT_TOOL)
+            .parent()
+            .expect("GCROOT_TOOL must have a parent");
+        fs::create_dir_all(gcroot_dir).context("creating GC-root directory")?;
+
+        let status = Command::new("nix-store")
+            .args([
+                "--add-root",
+                GCROOT_TOOL,
+                "--indirect",
+                "--realise",
+                tool_path,
+            ])
+            .status()
+            .context("pinning tool in GC-root")?;
+        if !status.success() {
+            bail!(
+                "nix-store --add-root failed (exit {})",
+                status.code().unwrap_or(-1)
+            );
+        }
+    } else if !quiet {
+        eprintln!(
+            "Binary is not in /nix/store, skipping GC-root; \
+             service will invoke `{}` directly",
+            tool_path
+        );
     }
-    Ok(String::from_utf8(out.stdout)?.trim().to_string())
+
+    Ok(())
 }
 
 fn render_service() -> Result<(String, String)> {
     let tool_path = tool_path().context("evaluating tool derivation for service installation")?;
 
-    let tpl = fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("templates/{}.in", SERVICE_NAME)),
-    )
-    .context("reading service unit template")?;
+    let tpl = include_str!("../templates/nix-opengl-driver.service.in");
 
     let mut hb = Handlebars::new();
     hb.register_template_string("service", tpl)?;
@@ -37,30 +60,33 @@ fn render_service() -> Result<(String, String)> {
         tool_path: &'a str,
     }
 
-    let data = Args {
-        tool_path: &tool_path,
-    };
-
     let rendered = hb
-        .render("service", &data)
+        .render(
+            "service",
+            &Args {
+                tool_path: &tool_path,
+            },
+        )
         .context("rendering service unit")?;
 
     Ok((tool_path, rendered))
 }
 
 pub fn print_service() -> Result<()> {
-    Ok(println!(
-        "{}",
-        render_service().context("printing service")?.1
-    ))
+    let (_, service_unit) = render_service().context("printing service")?;
+    println!("{}", service_unit);
+
+    Ok(())
 }
 
-pub fn install_service() -> Result<()> {
+pub fn install_service(quiet: bool) -> Result<()> {
     let (tool_path, service_unit) =
         render_service().context("rendering service unit for installation")?;
 
+    pin_if_nix_executable(&tool_path, quiet).context("if nix executable, pin as a gc-root")?;
+
     Command::new("nix-store")
-        .args(&[
+        .args([
             "--add-root",
             GCROOT_TOOL,
             "--indirect",
@@ -74,12 +100,12 @@ pub fn install_service() -> Result<()> {
         .with_context(|| format!("writing service unit to {}", SERVICE_PATH))?;
 
     Command::new("systemctl")
-        .args(&["daemon-reload"])
+        .args(["daemon-reload"])
         .status()
         .context("running systemctl daemon-reload")?;
 
     Command::new("systemctl")
-        .args(&["enable", SERVICE_NAME])
+        .args(["enable", SERVICE_NAME])
         .status()
         .context("enabling sync service")?;
 
@@ -109,7 +135,7 @@ pub fn uninstall_service() -> Result<()> {
         .context("running systemctl daemon-reload")?;
 
     let _ = Command::new("nix-store")
-        .args(&["--delete-root", GCROOT_TOOL])
+        .args(["--delete-root", GCROOT_TOOL])
         .status();
 
     println!("Uninstalled {}", SERVICE_NAME);

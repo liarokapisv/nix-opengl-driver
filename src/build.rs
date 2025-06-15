@@ -1,7 +1,7 @@
 use crate::detect::Driver;
+use crate::hash_store::HashStore;
 use anyhow::{bail, Context, Result};
 use handlebars::Handlebars;
-use crate::hash_store::HashStore;
 use regex::Regex;
 use serde::Serialize;
 use std::{
@@ -14,9 +14,8 @@ use tempfile::TempDir;
 
 /// Render the Nix expression from our Handlebars templates.
 pub fn render_nix_expr(driver: &Driver, hash: Option<&str>) -> Result<String> {
-    let tpl_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("templates");
-    let mesa_tpl = fs::read_to_string(tpl_dir.join("nix-opengl-driver.mesa.nix.in"))?;
-    let nvidia_tpl = fs::read_to_string(tpl_dir.join("nix-opengl-driver.nvidia.nix.in"))?;
+    let mesa_tpl = include_str!("../templates/nix-opengl-driver.mesa.nix.in");
+    let nvidia_tpl = include_str!("../templates/nix-opengl-driver.nvidia.nix.in");
 
     let mut hb = Handlebars::new();
     hb.register_template_string("mesa", mesa_tpl)?;
@@ -137,7 +136,7 @@ mod tests {
 
     #[test]
     fn hash_is_properly_extracted() {
-        const OUTPUT: &'static str = r#"
+        const OUTPUT: &str = r#"
 building '/nix/store/09x2dbx2mb0chnr02rg6fg48fphm8s44-intel-ocl-5.0-63503.drv'...
 error: hash mismatch in fixed-output derivation '/nix/store/0sv2pvsyilwvi488kkjw6mbx6h8sv4yv-NVIDIA-Linux-x86_64-570.133.07.run.drv':
          specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
@@ -146,7 +145,7 @@ error: 1 dependencies of derivation '/nix/store/d15fr4ik98n677hri556aqwkds0cz6sb
         "#;
 
         assert_eq!(
-            extract_hash(&OUTPUT).as_deref(),
+            extract_hash(OUTPUT).as_deref(),
             Some("sha256-LUPmTFgb5e9VTemIixqpADfvbUX1QoTT2dztwI3E3CY=")
         );
     }
