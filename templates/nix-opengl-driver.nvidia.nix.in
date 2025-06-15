@@ -1,0 +1,42 @@
+let
+  pkgs = import <nixpkgs> {
+    config.allowUnfree = true;
+    config.nvidia.acceptLicense = true;
+  };
+  inherit (pkgs.linuxPackages) nvidiaPackages;
+in
+pkgs.buildEnv {
+  name = "nix-opengl-driver";
+  paths = with pkgs; [
+    libglvnd # General Graphics & API Libraries
+
+    libva # VA-API runtime
+    libvdpau # VDPAU runtime
+    libvdpau-va-gl # VDPAU wrapper to use VA-API backend
+
+    vulkan-loader # Vulkan loader
+
+    amdvlk # AMD's alternative open-source Vulkan driver
+
+    intel-media-driver # Modern VA-API driver for Intel (Broadwell+)
+    intel-vaapi-driver # Older VA-API driver for Intel
+    intel-ocl # OpenCL for Intel GPUs
+    rocmPackages.clr.icd # OpenCL for modern AMD GPUs (ROCm)
+
+    (
+      (nvidiaPackages.mkDriver {
+        version = "{{{version}}}";
+        sha256_64bit = "{{{sha256}}}";
+        sha256_aarch64 = "";
+        settingsSha256 = "";
+        persistencedSha256 = "";
+      }).override
+      {
+        libsOnly = true;
+        kernel = null;
+      }
+    )
+    nvidia-vaapi-driver # VA-API support on the NVIDIA GPU
+
+  ];
+}

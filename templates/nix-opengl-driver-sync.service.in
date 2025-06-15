@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync Nix OpenGL-driver symlink farm at boot
+Documentation=man:nix-opengl-driver(1)
+Wants=nix-daemon.socket
+After=nix-daemon.socket
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nix-opengl-driver sync
+ExecStart=/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/nix-opengl-driver.conf
+
+[Install]
+WantedBy=multi-user.target
