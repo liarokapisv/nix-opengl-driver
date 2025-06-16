@@ -5,14 +5,16 @@ mod hash_store;
 mod service;
 mod state;
 mod tmpfiles;
+mod utils;
 
 use anyhow::Context as _;
 use anyhow::Result;
 use clap::Parser;
 use detect::Driver;
 use log::info;
+use std::fs;
 use std::path::Path;
-use std::{fs, process::Command};
+use utils::pin_store_path;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -63,18 +65,8 @@ fn main() -> Result<()> {
             let d = pick_driver(&cli)?;
             let p = build::build_farm(&d, cli.quiet)?;
             info!("Updating GC root");
-            let status = Command::new("nix-store")
-                .args([
-                    "--add-root",
-                    state::GCROOT_SYMLINK,
-                    "--indirect",
-                    "--realise",
-                    &p.to_string_lossy(),
-                ])
-                .status()?;
-            if !status.success() {
-                eprintln!("nix-store failed");
-            }
+            pin_store_path(&p.to_string_lossy(), state::GCROOT_SYMLINK)
+                .context("updating state file gc root")?;
             state::State::save(&d, &p)?;
             println!("Synced: {}", p.display());
         }

@@ -1,7 +1,9 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::{env, fs, path::Path, process::Command};
+use std::{env, fs, process::Command};
+
+use crate::utils::pin_store_path;
 
 const GCROOT_TOOL: &str = "/nix/var/nix/gcroots/nix-opengl-driver/tool";
 const SERVICE_NAME: &str = "nix-opengl-driver.service";
@@ -19,26 +21,8 @@ fn tool_derivation_path(path: &str) -> String {
 
 fn pin_if_nix_executable(tool_path: &str, quiet: bool) -> Result<()> {
     if tool_path.starts_with("/nix/store/") {
-        let gcroot_dir = Path::new(GCROOT_TOOL)
-            .parent()
-            .expect("GCROOT_TOOL must have a parent");
-        fs::create_dir_all(gcroot_dir).context("creating GC-root directory")?;
-
-        let status = Command::new("nix-store")
-            .args([
-                "--add-root",
-                GCROOT_TOOL,
-                "--indirect",
-                &tool_derivation_path(tool_path),
-            ])
-            .status()
-            .context("pinning tool in GC-root")?;
-        if !status.success() {
-            bail!(
-                "nix-store --add-root failed (exit {})",
-                status.code().unwrap_or(-1)
-            );
-        }
+        pin_store_path(&tool_derivation_path(tool_path), GCROOT_TOOL)
+            .context("updating tool gc root")?;
     } else if !quiet {
         eprintln!(
             "Binary is not in /nix/store, skipping GC-root; \
@@ -87,17 +71,6 @@ pub fn install_service(quiet: bool) -> Result<()> {
         render_service().context("rendering service unit for installation")?;
 
     pin_if_nix_executable(&tool_path, quiet).context("if nix executable, pin as a gc-root")?;
-
-    Command::new("nix-store")
-        .args([
-            "--add-root",
-            GCROOT_TOOL,
-            "--indirect",
-            "--realise",
-            &tool_path,
-        ])
-        .status()
-        .context("pinning tool in GC-root")?;
 
     fs::write(SERVICE_PATH, service_unit)
         .with_context(|| format!("writing service unit to {}", SERVICE_PATH))?;
