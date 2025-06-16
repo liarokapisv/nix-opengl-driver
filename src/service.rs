@@ -13,6 +13,10 @@ fn tool_path() -> Result<String> {
     Ok(exe.to_str().expect("Path is not valid utf8").to_string())
 }
 
+fn tool_derivation_path(path: &str) -> String {
+    path.splitn(5, '/').take(4).collect::<Vec<_>>().join("/")
+}
+
 fn pin_if_nix_executable(tool_path: &str, quiet: bool) -> Result<()> {
     if tool_path.starts_with("/nix/store/") {
         let gcroot_dir = Path::new(GCROOT_TOOL)
@@ -25,8 +29,7 @@ fn pin_if_nix_executable(tool_path: &str, quiet: bool) -> Result<()> {
                 "--add-root",
                 GCROOT_TOOL,
                 "--indirect",
-                "--realise",
-                tool_path,
+                &tool_derivation_path(tool_path),
             ])
             .status()
             .context("pinning tool in GC-root")?;
@@ -140,4 +143,17 @@ pub fn uninstall_service() -> Result<()> {
 
     println!("Uninstalled {}", SERVICE_NAME);
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn tool_derivation_path_works() {
+        let tool_path = "/nix/store/fdz1cyfchp65rc9rdidyffx1n21i473v-nix-opengl-driver-0.1.0/bin/nix-opengl-driver";
+        assert_eq!(
+            tool_derivation_path(tool_path),
+            "/nix/store/fdz1cyfchp65rc9rdidyffx1n21i473v-nix-opengl-driver-0.1.0"
+        );
+    }
 }
